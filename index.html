@@ -14,13 +14,17 @@ body{
 .hdr{text-align:center;margin-bottom:20px}
 .tit{font-size:36px;font-weight:bold;color:#f0c040;text-shadow:0 2px 12px rgba(240,192,64,.4)}
 .sub{font-size:15px;color:#8892b0;margin-top:6px}
-.whl{position:relative;width:330px;height:330px;margin:0 auto 20px}
-#wc{width:330px;height:330px}
-.ptr{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:30px solid #ff4757;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
-.rc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;background:rgba(26,26,46,.95);display:none;flex-direction:column;align-items:center;justify-content:center;border:3px solid #f0c040;box-shadow:0 0 20px rgba(240,192,64,.3)}
-.rc.s{display:flex}
-.rn{font-size:38px;font-weight:bold;color:#f0c040}
-.rl{font-size:14px;color:#8892b0;margin-top:2px}
+.nb{
+    width:260px;height:260px;border-radius:50%;margin:10px auto 30px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border:4px solid #f0c040;box-shadow:0 0 40px rgba(240,192,64,.25),inset 0 0 60px rgba(240,192,64,.06);
+    background:rgba(15,12,41,.9);transition:box-shadow .3s;
+}
+.nb.flash{box-shadow:0 0 60px rgba(240,192,64,.5),inset 0 0 60px rgba(240,192,64,.12)}
+.nb.done{box-shadow:0 0 30px rgba(76,175,80,.3);border-color:#4caf50}
+.nv{font-size:88px;font-weight:bold;color:#f0c040;line-height:1;transition:color .3s}
+.done .nv{color:#4caf50}
+.nl{font-size:16px;color:#8892b0;margin-top:4px}
 .fm{width:100%;max-width:380px;background:rgba(255,255,255,.06);border-radius:16px;padding:20px;margin:0 auto}
 .fr{display:flex;align-items:center;margin-bottom:14px}
 .fr:last-child{margin-bottom:0}
@@ -37,21 +41,7 @@ body{
 .sd.ok{background:rgba(76,175,80,.2);color:#4caf50;border:1px solid rgba(76,175,80,.3)}
 .sd.er{background:rgba(244,67,54,.2);color:#f44336;border:1px solid rgba(244,67,54,.3)}
 .sd.in{background:rgba(33,150,243,.2);color:#2196f3;border:1px solid rgba(33,150,243,.3)}
-.hs{width:100%;max-width:380px;background:rgba(255,255,255,.05);border-radius:16px;padding:18px;display:none}
-.hs.s{display:block}
-.ht{font-size:17px;font-weight:bold;color:#ccd6f6;margin-bottom:12px}
-.hl{max-height:240px;overflow-y:auto}
-.hi{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
-.hi:last-child{border-bottom:none}
-.hn{color:#f0c040;font-weight:bold;min-width:60px}
-.hm{color:#ccd6f6;min-width:60px}
-.he{color:#8892b0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hv{min-width:60px;text-align:right}
-.hok{color:#4caf50}
-.hfl{color:#f44336}
-.xb{margin:10px 0 0;text-align:center}
-.xb button{background:rgba(255,255,255,.1);color:#8892b0;border:1px solid rgba(255,255,255,.15);padding:8px 24px;border-radius:8px;cursor:pointer;font-size:13px}
-.xb button:hover{color:#f0c040;border-color:#f0c040}
+.tip{margin-top:24px;font-size:13px;color:rgba(255,255,255,.25)}
 </style>
 </head>
 <body>
@@ -61,13 +51,9 @@ body{
     <div class="sub">1 - 70 号图纸随机抽取</div>
 </div>
 
-<div class="whl">
-    <canvas id="wc"></canvas>
-    <div class="ptr"></div>
-    <div class="rc" id="rc">
-        <div class="rn" id="rn">-</div>
-        <div class="rl">号图纸</div>
-    </div>
+<div class="nb" id="nb">
+    <div class="nv" id="nv">?</div>
+    <div class="nl">号图纸</div>
 </div>
 
 <div class="fm">
@@ -82,75 +68,22 @@ body{
 
 <div class="sd" id="sd"><span id="si"></span><span id="sm"></span></div>
 
-<div class="hs" id="hs">
-    <div class="ht">摇号记录</div>
-    <div class="hl" id="hl"></div>
-    <div class="xb"><button onclick="exportExcel()">📥 导出Excel</button></div>
-</div>
+<div class="tip">摇号记录请前往 GitHub 查看 cad_images 文件夹</div>
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 const TOTAL = 70;
-let a = 0, ta = 0, aid = null, sp = false, dl = false, rn = null;
+let sp = false, dl = false, rn = null;
 let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
-if(hist.length) renderHist();
 
-// --- canvas ---
-function ic() {
-    const c = document.getElementById('wc'), d = devicePixelRatio || 1;
-    const rc = c.getBoundingClientRect();
-    c.width = rc.width * d; c.height = rc.height * d;
-    const x = c.getContext('2d'); x.scale(d, d);
-    const w = rc.width, h = rc.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 20;
-    return { x, w, h, cx, cy, r };
-}
-
-function dw(ang) {
-    const { x, w, h, cx, cy, r } = ic();
-    x.clearRect(0, 0, w, h);
-
-    x.beginPath(); x.arc(cx, cy, r + 8, 0, Math.PI * 2);
-    x.fillStyle = 'rgba(240,192,64,.05)'; x.fill();
-
-    x.beginPath(); x.arc(cx, cy, r + 3, 0, Math.PI * 2);
-    x.strokeStyle = 'rgba(240,192,64,.2)'; x.lineWidth = 2; x.stroke();
-
-    const seg = (2 * Math.PI) / TOTAL;
-    for (let i = 1; i <= TOTAL; i++) {
-        const sa = ang + (i - 1) * seg - Math.PI / 2, ea = sa + seg;
-        x.beginPath(); x.moveTo(cx, cy); x.arc(cx, cy, r, sa, ea); x.closePath();
-        const g = x.createRadialGradient(cx, cy, r * .3, cx, cy, r);
-        if (i % 2) { g.addColorStop(0, 'rgba(240,192,64,.12)'); g.addColorStop(.7, 'rgba(240,192,64,.25)'); g.addColorStop(1, 'rgba(240,192,64,.4)'); }
-        else { g.addColorStop(0, 'rgba(197,144,32,.08)'); g.addColorStop(.7, 'rgba(197,144,32,.2)'); g.addColorStop(1, 'rgba(197,144,32,.35)'); }
-        x.fillStyle = g; x.fill();
-        x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + r * Math.cos(sa), cy + r * Math.sin(sa));
-        x.strokeStyle = 'rgba(26,26,46,.5)'; x.lineWidth = .5; x.stroke();
-
-        const ma = sa + seg / 2, tr = r - 22;
-        const tx = cx + tr * Math.cos(ma), ty = cy + tr * Math.sin(ma);
-        x.save(); x.translate(tx, ty); x.rotate(ma + Math.PI / 2);
-        x.fillStyle = i % 10 === 0 ? '#fff' : '#ccd6f6';
-        x.font = 'bold 11px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-        x.fillText(String(i), 0, 0); x.restore();
-    }
-
-    x.beginPath(); x.arc(cx, cy, r - 34, 0, Math.PI * 2);
-    x.strokeStyle = 'rgba(240,192,64,.35)'; x.lineWidth = 2; x.stroke();
-
-    x.beginPath(); x.arc(cx, cy, r - 36, 0, Math.PI * 2);
-    const ig = x.createRadialGradient(cx, cy, 0, cx, cy, r - 36);
-    ig.addColorStop(0, 'rgba(15,12,41,.95)'); ig.addColorStop(1, 'rgba(26,26,46,.88)');
-    x.fillStyle = ig; x.fill();
-}
-
-// --- helpers ---
 function $g(id) { return document.getElementById(id); }
+
 function ub() {
     const b = $g('sb');
     if (sp) { b.textContent = '🎰 摇号中...'; b.disabled = true; }
     else if (dl) { b.textContent = '⏳ 下载中...'; b.disabled = true; }
     else { b.textContent = rn ? '🔄 再摇一次' : '🎰 开始摇号'; b.disabled = false; }
 }
+
 function ss(tp, ic, msg) {
     const b = $g('sd'); b.className = 'sd ' + tp + ' s';
     $g('si').textContent = ic; $g('sm').textContent = msg;
@@ -160,18 +93,11 @@ function addHist(num, sid, nm, em, ok) {
     hist.unshift({ num, sid, nm, em, ok, time: Date.now() });
     if (hist.length > 50) hist.pop();
     localStorage.setItem('lt_hist', JSON.stringify(hist));
-    renderHist();
 }
-function renderHist() {
-    const s = $g('hs'), l = $g('hl');
-    if (!hist.length) { s.classList.remove('s'); return; }
-    s.classList.add('s');
-    l.innerHTML = hist.map(h => `<div class="hi"><span class="hn">第${h.num}号</span><span class="hm">${h.nm}</span><span class="he">${h.em}</span><span class="hv ${h.ok?'hok':'hfl'}">${h.ok?'✓已发送':'✗失败'}</span></div>`).join('');
-}
+
 function findBySid(sid) { return hist.find(h => h.sid === sid); }
 function findByEmail(em) { return hist.some(h => h.em === em); }
 
-// --- spin ---
 function spin() {
     if (sp || dl) return;
     const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
@@ -182,39 +108,50 @@ function spin() {
 
     const prev = findBySid(sid);
     if (prev) {
-        // 同一学号再次摇号：直接重发之前的图纸
-        rn = prev.num; $g('rn').textContent = prev.num; $g('rc').classList.add('s');
-        ss('in', '📧', `你之前摇中第${prev.num}号图纸，正在重新发送...`);
-        dl = true; ub(); done(prev.num); return;
+        const nb = $g('nb'); nb.classList.add('done');
+        $g('nv').textContent = prev.num;
+        ss('in', '⏳', `你之前摇中第${prev.num}号图纸，正在下载...`);
+        dl = true; ub(); download(prev.num); return;
     }
     if (findByEmail(em)) return alert('该邮箱已被其他学号使用，不能重复摇号');
 
     const tn = Math.floor(Math.random() * TOTAL) + 1;
-    const seg = (2 * Math.PI) / TOTAL;
-    const nc = (tn - 1) * seg + seg / 2;
-    const off = -Math.PI / 2 - nc;
-    const spins = (4 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
-    ta = a + spins + off;
+    sp = true; rn = null;
+    const nb = $g('nb'); nb.classList.remove('done');
+    $g('sd').classList.remove('s');
+    ub();
 
-    sp = true; rn = null; $g('rc').classList.remove('s'); $g('sd').classList.remove('s'); ub();
+    let count = 0;
+    const total = 25 + Math.floor(Math.random() * 15);
+    let delay = 30;
 
-    const sa = a, dur = 5000 + Math.random() * 2000, st = Date.now();
-    (function anim() {
-        const el = Date.now() - st, p = Math.min(el / dur, 1);
-        a = sa + (ta - sa) * (1 - Math.pow(1 - p, 3));
-        dw(a);
-        if (p < 1) { aid = requestAnimationFrame(anim); }
-        else { a = ta; aid = null; dw(a); sp = false; rn = tn; $g('rn').textContent = tn; $g('rc').classList.add('s'); ub(); done(tn); }
-    })();
+    function flash() {
+        count++;
+        const dn = Math.floor(Math.random() * TOTAL) + 1;
+        $g('nv').textContent = dn;
+        const nb = $g('nb');
+        nb.classList.add('flash');
+        setTimeout(() => nb.classList.remove('flash'), delay * 0.7);
+
+        if (count < total) {
+            delay = 30 + (count / total) * 250;
+            setTimeout(flash, delay);
+        } else {
+            $g('nv').textContent = tn;
+            nb.classList.add('done');
+            sp = false; rn = tn; ub();
+            ss('in', '⏳', `已摇中第${tn}号图纸，正在下载...`);
+            download(tn);
+        }
+    }
+    flash();
 }
 
-// --- send email ---
-async function done(num) {
+async function download(num) {
+    dl = true; ub();
     const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
-    ss('in', '⏳', `已摇中第${num}号图纸，正在下载...`); dl = true; ub();
     try {
-        const url = 'cad_images/' + num + '.dwg';
-        const res = await fetch(url);
+        const res = await fetch('cad_images/' + num + '.dwg');
         if (!res.ok) throw new Error('文件不存在');
         const blob = await res.blob();
         const href = URL.createObjectURL(blob);
@@ -225,28 +162,13 @@ async function done(num) {
         addHist(num, sid, nm, em, true);
     } catch (e) {
         console.error(e);
-        ss('er', '✗', '下载失败，请检查 cad_images/' + num + '.dwg 是否存在');
+        ss('er', '✗', '下载失败');
         addHist(num, sid, nm, em, false);
     } finally { dl = false; ub(); }
 }
 
-// --- export ---
-function exportExcel() {
-    if (!hist.length) return alert('没有可导出的记录');
-    const rows = hist.map((h, i) => ({
-        '序号': i + 1, '学号': h.sid, '姓名': h.nm, '邮箱': h.em,
-        '图纸编号': h.num, '时间': new Date(h.time).toLocaleString('zh-CN'),
-        '状态': h.ok ? '已发送' : '失败'
-    }));
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, '摇号记录');
-    XLSX.writeFile(wb, '摇号记录_' + new Date().toISOString().slice(0, 10) + '.xlsx');
-}
-
-// --- init ---
-addEventListener('DOMContentLoaded', () => dw(0));
-addEventListener('resize', () => dw(a));
+// init
+$g('sd').classList.remove('s');
 </script>
 </body>
 </html>
