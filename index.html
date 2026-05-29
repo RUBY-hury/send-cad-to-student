@@ -168,7 +168,8 @@ function renderHist() {
     s.classList.add('s');
     l.innerHTML = hist.map(h => `<div class="hi"><span class="hn">第${h.num}号</span><span class="hm">${h.nm}</span><span class="he">${h.em}</span><span class="hv ${h.ok?'hok':'hfl'}">${h.ok?'✓已发送':'✗失败'}</span></div>`).join('');
 }
-function chkDup(em) { return hist.some(h => h.em === em); }
+function findBySid(sid) { return hist.find(h => h.sid === sid); }
+function findByEmail(em) { return hist.some(h => h.em === em); }
 
 // --- spin ---
 function spin() {
@@ -178,7 +179,15 @@ function spin() {
     if (!nm) return alert('请输入姓名');
     if (!em) return alert('请输入邮箱');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return alert('邮箱格式不正确');
-    if (chkDup(em)) return alert('该邮箱已摇过号，不能重复摇号');
+
+    const prev = findBySid(sid);
+    if (prev) {
+        // 同一学号再次摇号：直接重发之前的图纸
+        rn = prev.num; $g('rn').textContent = prev.num; $g('rc').classList.add('s');
+        ss('in', '📧', `你之前摇中第${prev.num}号图纸，正在重新发送...`);
+        dl = true; ub(); done(prev.num); return;
+    }
+    if (findByEmail(em)) return alert('该邮箱已被其他学号使用，不能重复摇号');
 
     const tn = Math.floor(Math.random() * TOTAL) + 1;
     const seg = (2 * Math.PI) / TOTAL;
