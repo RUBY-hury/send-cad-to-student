@@ -2,6 +2,11 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
+function loadConfig() {
+    const configPath = path.join(process.cwd(), 'config.json');
+    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -21,23 +26,24 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: '图纸编号无效' });
         }
 
+        const config = loadConfig();
         const cadPath = path.join(process.cwd(), 'cad_images', `${num}.dwg`);
         if (!fs.existsSync(cadPath)) {
             return res.status(404).json({ success: false, message: `第${num}号CAD图纸文件不存在` });
         }
 
         const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_SERVER || 'smtp.qq.com',
-            port: parseInt(process.env.SMTP_PORT || '587'),
+            host: config.smtp_server,
+            port: config.smtp_port,
             secure: false,
             auth: {
-                user: process.env.SENDER_EMAIL,
-                pass: process.env.SENDER_PASSWORD,
+                user: config.sender_email,
+                pass: config.sender_password,
             },
         });
 
         await transporter.sendMail({
-            from: process.env.SENDER_EMAIL,
+            from: config.sender_email,
             to: email,
             subject: `恭喜摇中第${num}号CAD图纸`,
             text: `亲爱的${name}同学（学号：${student_id}）：\n\n恭喜您摇中了第${num}号CAD图纸！\n附件为对应的CAD图纸文件，请查收。\n\n祝学习进步！`,
