@@ -90,6 +90,7 @@ body{
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
+const API = 'https://send-cad-to-student.vercel.app/api/send';
 const TOTAL = 70;
 let a = 0, ta = 0, aid = null, sp = false, dl = false, rn = null;
 let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
@@ -213,7 +214,7 @@ async function done(num) {
     const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
     ss('in', '📧', `已摇中第${num}号图纸，正在发送邮件到 ${em}...`); dl = true; ub();
     try {
-        const res = await fetch('/api/send', {
+        const res = await fetch(API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ student_id: sid, name: nm, email: em, number: num }),
