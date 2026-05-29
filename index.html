@@ -166,7 +166,7 @@ function renderHist() {
     const s = $g('hs'), l = $g('hl');
     if (!hist.length) { s.classList.remove('s'); return; }
     s.classList.add('s');
-    l.innerHTML = hist.map(h => `<div class="hi"><span class="hn">第${h.num}号</span><span class="hm">${h.nm}</span><span class="he">${h.em}</span><span class="hv ${h.ok?'hok':'hfl'}">${h.ok?'✓已下载':'✗失败'}</span></div>`).join('');
+    l.innerHTML = hist.map(h => `<div class="hi"><span class="hn">第${h.num}号</span><span class="hm">${h.nm}</span><span class="he">${h.em}</span><span class="hv ${h.ok?'hok':'hfl'}">${h.ok?'✓已发送':'✗失败'}</span></div>`).join('');
 }
 function chkDup(em) { return hist.some(h => h.em === em); }
 
@@ -199,24 +199,23 @@ function spin() {
     })();
 }
 
-// --- download ---
+// --- send email ---
 async function done(num) {
     const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
-    ss('in', '⏳', `已摇中第${num}号图纸，正在下载...`); dl = true; ub();
+    ss('in', '📧', `已摇中第${num}号图纸，正在发送邮件到 ${em}...`); dl = true; ub();
     try {
-        const url = 'cad_images/' + num + '.dwg';
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('文件不存在');
-        const blob = await res.blob();
-        const href = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = href; a.download = num + '.dwg';
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        URL.revokeObjectURL(href);
-        ss('ok', '✓', `第${num}号图纸已下载`);
+        const res = await fetch('/api/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: sid, name: nm, email: em, number: num }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || '发送失败');
+        ss('ok', '✓', data.message);
         addHist(num, sid, nm, em, true);
     } catch (e) {
         console.error(e);
-        ss('er', '✗', '下载失败，请检查 cad_images/' + num + '.dwg 是否存在');
+        ss('er', '✗', e.message || '发送失败，请稍后重试');
         addHist(num, sid, nm, em, false);
     } finally { dl = false; ub(); }
 }
@@ -227,7 +226,7 @@ function exportExcel() {
     const rows = hist.map((h, i) => ({
         '序号': i + 1, '学号': h.sid, '姓名': h.nm, '邮箱': h.em,
         '图纸编号': h.num, '时间': new Date(h.time).toLocaleString('zh-CN'),
-        '状态': h.ok ? '已下载' : '失败'
+        '状态': h.ok ? '已发送' : '失败'
     }));
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);

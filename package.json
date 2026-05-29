@@ -1,0 +1,7 @@
+{
+    "name": "send-cad-to-student",
+    "private": true,
+    "dependencies": {
+        "nodemailer": "^6.9.0"
+    }
+}
