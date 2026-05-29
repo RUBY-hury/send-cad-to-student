@@ -42,6 +42,18 @@ body{
 .sd.er{background:rgba(244,67,54,.2);color:#f44336;border:1px solid rgba(244,67,54,.3)}
 .sd.in{background:rgba(33,150,243,.2);color:#2196f3;border:1px solid rgba(33,150,243,.3)}
 .tip{margin-top:24px;font-size:13px;color:rgba(255,255,255,.25)}
+.adm{margin-top:16px;font-size:12px;color:rgba(255,255,255,.2);cursor:pointer;text-decoration:underline}
+.pnl{width:100%;max-width:380px;margin:12px auto;display:none;background:rgba(255,255,255,.05);border-radius:12px;padding:16px}
+.pnl.s{display:block}
+.pnl h3{font-size:15px;color:#f0c040;margin-bottom:12px}
+.pnl table{width:100%;font-size:12px;border-collapse:collapse}
+.pnl td,.pnl th{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center}
+.pnl th{color:#f0c040}
+.pnl .ar{margin-top:12px;display:flex;gap:8px}
+.pnl .ar input{flex:1;height:36px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:0 10px;font-size:13px;color:#fff;outline:none}
+.pnl .ar button{height:36px;padding:0 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;color:#fff}
+.pnl .btn-clr{background:rgba(244,67,54,.3)}
+.pnl .btn-all{background:rgba(244,67,54,.5)}
 </style>
 </head>
 <body>
@@ -69,6 +81,16 @@ body{
 <div class="sd" id="sd"><span id="si"></span><span id="sm"></span></div>
 
 <div class="tip">摇号记录请前往 GitHub 查看 cad_images 文件夹</div>
+<div class="adm" onclick="toggleAdmin()">⚙ 管理</div>
+<div class="pnl" id="pnl">
+    <h3>已摇号记录</h3>
+    <div id="tbl"><span style="color:#8892b0">暂无记录</span></div>
+    <div class="ar">
+        <input id="clrSid" placeholder="输入要清除的学号">
+        <button class="btn-clr" onclick="clearOne()">清除该学号</button>
+        <button class="btn-all" onclick="clearAll()">清空全部</button>
+    </div>
+</div>
 
 <script>
 const TOTAL = 70;
@@ -169,6 +191,43 @@ async function download(num) {
 
 // init
 $g('sd').classList.remove('s');
+refreshAdmin();
+
+// --- admin ---
+function toggleAdmin() {
+    const p = $g('pnl');
+    p.classList.toggle('s');
+    if (p.classList.contains('s')) refreshAdmin();
+}
+
+function refreshAdmin() {
+    const tbl = $g('tbl');
+    if (!hist.length) { tbl.innerHTML = '<span style="color:#8892b0">暂无记录</span>'; return; }
+    let h = '<table><tr><th>学号</th><th>姓名</th><th>邮箱</th><th>图纸</th><th>状态</th></tr>';
+    hist.forEach(r => {
+        h += `<tr><td>${r.sid}</td><td>${r.nm}</td><td style="font-size:11px">${r.em}</td><td>${r.num}</td><td style="color:${r.ok?'#4caf50':'#f44336'}">${r.ok?'✓':'✗'}</td></tr>`;
+    });
+    h += '</table>';
+    tbl.innerHTML = h;
+}
+
+function clearOne() {
+    const sid = $g('clrSid').value.trim();
+    if (!sid) return alert('请输入学号');
+    const before = hist.length;
+    hist = hist.filter(h => h.sid !== sid);
+    if (hist.length === before) return alert('未找到该学号的记录');
+    localStorage.setItem('lt_hist', JSON.stringify(hist));
+    refreshAdmin();
+    $g('clrSid').value = '';
+}
+
+function clearAll() {
+    if (!confirm('确定要清空全部摇号记录吗？')) return;
+    hist = [];
+    localStorage.removeItem('lt_hist');
+    refreshAdmin();
+}
 </script>
 </body>
 </html>
