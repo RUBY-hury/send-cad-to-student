@@ -1,0 +1,57 @@
+<view class="container">
+    <view class="header">
+        <text class="title">🎯 摇号抽CAD图</text>
+        <text class="subtitle">1 - 100 号图纸随机抽取</text>
+    </view>
+
+    <view class="main-section">
+        <view class="wheel-container">
+            <canvas type="2d" id="wheelCanvas" class="wheel-canvas"></canvas>
+            <view class="pointer"></view>
+            <view class="result-circle" wx:if="{{resultNumber}}">
+                <text class="result-number">{{resultNumber}}</text>
+                <text class="result-label">号图纸</text>
+            </view>
+        </view>
+
+        <view class="form-section">
+            <view class="form-item">
+                <text class="form-label">学号</text>
+                <input class="form-input" placeholder="请输入学号" value="{{studentId}}" bindinput="onStudentIdInput" type="number" />
+            </view>
+            <view class="form-item">
+                <text class="form-label">姓名</text>
+                <input class="form-input" placeholder="请输入姓名" value="{{name}}" bindinput="onNameInput" />
+            </view>
+            <view class="form-item">
+                <text class="form-label">邮箱</text>
+                <input class="form-input" placeholder="请输入邮箱（每人限摇一次）" value="{{email}}" bindinput="onEmailInput" type="text" />
+            </view>
+        </view>
+    </view>
+
+    <view class="action-section">
+        <button class="spin-btn {{spinning || downloading ? 'disabled' : ''}}" bindtap="onSpin" disabled="{{spinning || downloading}}">
+            {{spinning ? '🎰 摇号中...' : (downloading ? '⏳ 下载中...' : (resultNumber ? '🔄 再摇一次' : '🎰 开始摇号'))}}
+        </button>
+    </view>
+
+    <view class="status-section" wx:if="{{statusMessage}}">
+        <view class="status {{statusType}}">
+            <text>{{statusIcon}} </text>
+            <text>{{statusMessage}}</text>
+        </view>
+    </view>
+
+    <view class="history-section" wx:if="{{history.length > 0}}">
+        <text class="history-title">摇号记录</text>
+        <scroll-view class="history-list" scroll-y>
+            <view class="history-item" wx:for="{{history}}" wx:key="time">
+                <text class="hist-num">第{{item.number}}号</text>
+                <text class="hist-name">{{item.name}}</text>
+                <text class="hist-email">{{item.email}}</text>
+                <text class="hist-status {{item.success ? 'sent-ok' : 'sent-fail'}}">{{item.success ? '✓已下载' : '✗失败'}}</text>
+            </view>
+        </scroll-view>
+    </view>
+</view>

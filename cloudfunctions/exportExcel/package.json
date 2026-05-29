@@ -1,0 +1,10 @@
+{
+    "name": "exportExcel",
+    "version": "1.0.0",
+    "description": "导出摇号记录到Excel文件（存入云存储）",
+    "main": "index.js",
+    "dependencies": {
+        "wx-server-sdk": "latest",
+        "exceljs": "^4.4.0"
+    }
+}

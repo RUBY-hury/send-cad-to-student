@@ -1,0 +1,13 @@
+{
+    "pages": [
+        "pages/index/index"
+    ],
+    "window": {
+        "navigationBarTitleText": "摇号抽CAD图",
+        "navigationBarBackgroundColor": "#1a1a2e",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#16213e"
+    },
+    "cloud": true,
+    "sitemapLocation": "sitemap.json"
+}
