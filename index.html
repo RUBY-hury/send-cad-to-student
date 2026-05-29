@@ -90,7 +90,6 @@ body{
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
-const API = 'https://send-cad-to-student.vercel.app/api/send';
 const TOTAL = 70;
 let a = 0, ta = 0, aid = null, sp = false, dl = false, rn = null;
 let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
@@ -212,20 +211,21 @@ function spin() {
 // --- send email ---
 async function done(num) {
     const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
-    ss('in', '📧', `已摇中第${num}号图纸，正在发送邮件到 ${em}...`); dl = true; ub();
+    ss('in', '⏳', `已摇中第${num}号图纸，正在下载...`); dl = true; ub();
     try {
-        const res = await fetch(API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: sid, name: nm, email: em, number: num }),
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message || '发送失败');
-        ss('ok', '✓', data.message);
+        const url = 'cad_images/' + num + '.dwg';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('文件不存在');
+        const blob = await res.blob();
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = href; a.download = num + '.dwg';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(href);
+        ss('ok', '✓', `第${num}号图纸已下载`);
         addHist(num, sid, nm, em, true);
     } catch (e) {
         console.error(e);
-        ss('er', '✗', e.message || '发送失败，请稍后重试');
+        ss('er', '✗', '下载失败，请检查 cad_images/' + num + '.dwg 是否存在');
         addHist(num, sid, nm, em, false);
     } finally { dl = false; ub(); }
 }

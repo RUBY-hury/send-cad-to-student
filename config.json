@@ -1,6 +1,0 @@
-{
-    "smtp_server": "smtp.qq.com",
-    "smtp_port": 587,
-    "sender_email": "你的QQ邮箱@qq.com",
-    "sender_password": "你的QQ邮箱授权码"
-}
