@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>摇号抽CAD图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+    font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+    color:#ccd6f6;display:flex;flex-direction:column;align-items:center;padding:24px 16px 48px;
+}
+.hdr{text-align:center;margin-bottom:20px}
+.tit{font-size:36px;font-weight:bold;color:#f0c040;text-shadow:0 2px 12px rgba(240,192,64,.4)}
+.sub{font-size:15px;color:#8892b0;margin-top:6px}
+.nb{
+    width:260px;height:260px;border-radius:50%;margin:10px auto 30px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border:4px solid #f0c040;box-shadow:0 0 40px rgba(240,192,64,.25),inset 0 0 60px rgba(240,192,64,.06);
+    background:rgba(15,12,41,.9);transition:box-shadow .3s;
+}
+.nb.flash{box-shadow:0 0 60px rgba(240,192,64,.5),inset 0 0 60px rgba(240,192,64,.12)}
+.nb.done{box-shadow:0 0 30px rgba(76,175,80,.3);border-color:#4caf50}
+.nv{font-size:88px;font-weight:bold;color:#f0c040;line-height:1;transition:color .3s}
+.done .nv{color:#4caf50}
+.nl{font-size:16px;color:#8892b0;margin-top:4px}
+.fm{width:100%;max-width:380px;background:rgba(255,255,255,.06);border-radius:16px;padding:20px;margin:0 auto}
+.fr{display:flex;align-items:center;margin-bottom:14px}
+.fr:last-child{margin-bottom:0}
+.fl{width:50px;font-size:15px;color:#ccd6f6;flex-shrink:0}
+.fi{flex:1;height:44px;background:rgba(255,255,255,.1);border-radius:10px;padding:0 14px;font-size:15px;color:#fff;outline:none;border:2px solid rgba(255,255,255,.12);transition:border-color .2s}
+.fi:focus{border-color:#f0c040}
+.fi::placeholder{color:rgba(255,255,255,.3)}
+.bw{margin:20px 0;text-align:center}
+.sb{width:280px;height:52px;background:linear-gradient(135deg,#f0c040,#e0a800);color:#1a1a2e;font-size:20px;font-weight:bold;border-radius:26px;cursor:pointer;border:none;box-shadow:0 4px 16px rgba(240,192,64,.35);transition:.2s}
+.sb:active{transform:scale(.96);opacity:.85}
+.sb:disabled{background:linear-gradient(135deg,#555,#444);color:#888;box-shadow:none;cursor:not-allowed}
+.sd{width:100%;max-width:380px;margin:0 auto 16px;padding:14px 18px;border-radius:12px;font-size:14px;text-align:center;display:none;align-items:center;justify-content:center;gap:8px}
+.sd.s{display:flex}
+.sd.ok{background:rgba(76,175,80,.2);color:#4caf50;border:1px solid rgba(76,175,80,.3)}
+.sd.er{background:rgba(244,67,54,.2);color:#f44336;border:1px solid rgba(244,67,54,.3)}
+.sd.in{background:rgba(33,150,243,.2);color:#2196f3;border:1px solid rgba(33,150,243,.3)}
+.tip{margin-top:24px;font-size:13px;color:rgba(255,255,255,.25)}
+.adm{margin-top:16px;font-size:12px;color:rgba(255,255,255,.2);cursor:pointer;text-decoration:underline}
+.pnl{width:100%;max-width:380px;margin:12px auto;display:none;background:rgba(255,255,255,.05);border-radius:12px;padding:16px}
+.pnl.s{display:block}
+.pnl h3{font-size:15px;color:#f0c040;margin-bottom:12px}
+.pnl table{width:100%;font-size:12px;border-collapse:collapse}
+.pnl td,.pnl th{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center}
+.pnl th{color:#f0c040}
+.pnl .ar{margin-top:12px;display:flex;gap:8px}
+.pnl .ar input{flex:1;height:36px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:0 10px;font-size:13px;color:#fff;outline:none}
+.pnl .ar button{height:36px;padding:0 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;color:#fff}
+.pnl .btn-clr{background:rgba(244,67,54,.3)}
+.pnl .btn-all{background:rgba(244,67,54,.5)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+    <div class="tit">🎯 摇号抽CAD图</div>
+    <div class="sub">1 - 30 号图纸随机抽取</div>
+</div>
+
+<div class="nb" id="nb">
+    <div class="nv" id="nv">?</div>
+    <div class="nl">号图纸</div>
+</div>
+
+<div class="fm">
+    <div class="fr"><span class="fl">学号</span><input class="fi" id="sid" placeholder="请输入学号" autocomplete="off"></div>
+    <div class="fr"><span class="fl">姓名</span><input class="fi" id="nm" placeholder="请输入姓名" autocomplete="off"></div>
+    <div class="fr"><span class="fl">邮箱</span><input class="fi" id="em" placeholder="请输入邮箱（每人限摇一次）" autocomplete="off"></div>
+</div>
+
+<div class="bw">
+    <button class="sb" id="sb" onclick="spin()">🎰 开始摇号</button>
+</div>
+
+<div class="sd" id="sd"><span id="si"></span><span id="sm"></span></div>
+
+<div class="tip">摇号记录请前往 GitHub 查看 cad_images 文件夹</div>
+<div class="adm" onclick="toggleAdmin()">⚙ 管理</div>
+<div class="pnl" id="pnl">
+    <h3>已摇号记录</h3>
+    <div id="tbl"><span style="color:#8892b0">暂无记录</span></div>
+    <div class="ar">
+        <input id="clrSid" placeholder="输入要清除的学号">
+        <button class="btn-clr" onclick="clearOne()">清除该学号</button>
+        <button class="btn-all" onclick="clearAll()">清空全部</button>
+    </div>
+</div>
+
+<script>
+const TOTAL = 30;
+const ADMIN_PW = 'admin123';
+let sp = false, dl = false, rn = null;
+let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
+
+function $g(id) { return document.getElementById(id); }
+
+function ub() {
+    const b = $g('sb');
+    if (sp) { b.textContent = '🎰 摇号中...'; b.disabled = true; }
+    else if (dl) { b.textContent = '⏳ 下载中...'; b.disabled = true; }
+    else { b.textContent = rn ? '🔄 再摇一次' : '🎰 开始摇号'; b.disabled = false; }
+}
+
+function ss(tp, ic, msg) {
+    const b = $g('sd'); b.className = 'sd ' + tp + ' s';
+    $g('si').textContent = ic; $g('sm').textContent = msg;
+}
+
+function addHist(num, sid, nm, em, ok) {
+    hist.unshift({ num, sid, nm, em, ok, time: Date.now() });
+    if (hist.length > 50) hist.pop();
+    localStorage.setItem('lt_hist', JSON.stringify(hist));
+}
+
+function findBySid(sid) { return hist.find(h => h.sid === sid); }
+function findByEmail(em) { return hist.some(h => h.em === em); }
+
+function spin() {
+    if (sp || dl) return;
+    const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
+    if (!sid) return alert('请输入学号');
+    if (!nm) return alert('请输入姓名');
+    if (!em) return alert('请输入邮箱');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return alert('邮箱格式不正确');
+
+    const prev = findBySid(sid);
+    if (prev) {
+        const nb = $g('nb'); nb.classList.add('done');
+        $g('nv').textContent = prev.num;
+        ss('in', '⏳', `你之前摇中第${prev.num}号图纸，正在下载...`);
+        dl = true; ub(); download(prev.num); return;
+    }
+    if (findByEmail(em)) return alert('该邮箱已被其他学号使用，不能重复摇号');
+
+    const tn = Math.floor(Math.random() * TOTAL) + 1;
+    sp = true; rn = null;
+    const nb = $g('nb'); nb.classList.remove('done');
+    $g('sd').classList.remove('s');
+    ub();
+
+    let count = 0;
+    const total = 25 + Math.floor(Math.random() * 15);
+    let delay = 30;
+
+    function flash() {
+        count++;
+        const dn = Math.floor(Math.random() * TOTAL) + 1;
+        $g('nv').textContent = dn;
+        const nb = $g('nb');
+        nb.classList.add('flash');
+        setTimeout(() => nb.classList.remove('flash'), delay * 0.7);
+
+        if (count < total) {
+            delay = 30 + (count / total) * 250;
+            setTimeout(flash, delay);
+        } else {
+            $g('nv').textContent = tn;
+            nb.classList.add('done');
+            sp = false; rn = tn; ub();
+            ss('in', '⏳', `已摇中第${tn}号图纸，正在下载...`);
+            download(tn);
+        }
+    }
+    flash();
+}
+
+async function download(num) {
+    dl = true; ub();
+    const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
+    try {
+        const res = await fetch('cad_images/' + num + '.dwg');
+        if (!res.ok) throw new Error('文件不存在');
+        const blob = await res.blob();
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = href; a.download = num + '.dwg';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(href);
+        ss('ok', '✓', `第${num}号图纸已下载`);
+        addHist(num, sid, nm, em, true);
+    } catch (e) {
+        console.error(e);
+        ss('er', '✗', '下载失败');
+        addHist(num, sid, nm, em, false);
+    } finally { dl = false; ub(); }
+}
+
+// init
+$g('sd').classList.remove('s');
+refreshAdmin();
+
+// --- admin ---
+let adminAuthed = false;
+
+function toggleAdmin() {
+    if (!adminAuthed) {
+        const pw = prompt('请输入管理员密码：');
+        if (pw === ADMIN_PW) { adminAuthed = true; }
+        else if (pw !== null) { alert('密码错误'); return; }
+        else { return; }
+    }
+    const p = $g('pnl');
+    p.classList.toggle('s');
+    if (p.classList.contains('s')) refreshAdmin();
+}
+
+function refreshAdmin() {
+    const tbl = $g('tbl');
+    if (!hist.length) { tbl.innerHTML = '<span style="color:#8892b0">暂无记录</span>'; return; }
+    let h = '<table><tr><th>学号</th><th>姓名</th><th>邮箱</th><th>图纸</th><th>状态</th></tr>';
+    hist.forEach(r => {
+        h += `<tr><td>${r.sid}</td><td>${r.nm}</td><td style="font-size:11px">${r.em}</td><td>${r.num}</td><td style="color:${r.ok?'#4caf50':'#f44336'}">${r.ok?'✓':'✗'}</td></tr>`;
+    });
+    h += '</table>';
+    tbl.innerHTML = h;
+}
+
+function clearOne() {
+    const sid = $g('clrSid').value.trim();
+    if (!sid) return alert('请输入学号');
+    const before = hist.length;
+    hist = hist.filter(h => h.sid !== sid);
+    if (hist.length === before) return alert('未找到该学号的记录');
+    localStorage.setItem('lt_hist', JSON.stringify(hist));
+    refreshAdmin();
+    $g('clrSid').value = '';
+}
+
+function clearAll() {
+    if (!confirm('确定要清空全部摇号记录吗？')) return;
+    hist = [];
+    localStorage.removeItem('lt_hist');
+    refreshAdmin();
+}
+</script>
+</body>
+</html>
