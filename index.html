@@ -94,6 +94,7 @@ body{
 
 <script>
 const TOTAL = 70;
+const ADMIN_PW = 'admin123';
 let sp = false, dl = false, rn = null;
 let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
 
@@ -194,7 +195,15 @@ $g('sd').classList.remove('s');
 refreshAdmin();
 
 // --- admin ---
+let adminAuthed = false;
+
 function toggleAdmin() {
+    if (!adminAuthed) {
+        const pw = prompt('请输入管理员密码：');
+        if (pw === ADMIN_PW) { adminAuthed = true; }
+        else if (pw !== null) { alert('密码错误'); return; }
+        else { return; }
+    }
     const p = $g('pnl');
     p.classList.toggle('s');
     if (p.classList.contains('s')) refreshAdmin();
