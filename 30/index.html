@@ -111,12 +111,25 @@ function ss(tp, ic, msg) {
 }
 
 function hashNum(sid) {
+    const seed = getSeed(sid);
     let h = 0;
-    for (let i = 0; i < sid.length; i++) {
-        h = ((h << 5) - h) + sid.charCodeAt(i);
+    const k = sid + '_' + seed;
+    for (let i = 0; i < k.length; i++) {
+        h = ((h << 5) - h) + k.charCodeAt(i);
         h |= 0;
     }
     return Math.abs(h % TOTAL) + 1;
+}
+
+function getSeed(sid) {
+    const seeds = JSON.parse(localStorage.getItem('lt_seeds') || '{}');
+    return seeds[sid] || 0;
+}
+
+function setSeed(sid, val) {
+    const seeds = JSON.parse(localStorage.getItem('lt_seeds') || '{}');
+    seeds[sid] = val;
+    localStorage.setItem('lt_seeds', JSON.stringify(seeds));
 }
 
 function spin() {
@@ -199,13 +212,21 @@ function checkPw() {
 
 function showLookup() {
     const tbl = $g('tbl');
-    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询对应图纸"><button class="btn-clr" onclick="lookup()">查询</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div>';
+    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询或重置"><button class="btn-clr" onclick="lookup()">查询</button><button class="btn-all" onclick="resetSid()">重置该学号</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div>';
 }
 
 function lookup() {
     const sid = $g('lkSid').value.trim();
     if (!sid) return;
-    $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸';
+    $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸（次数：' + getSeed(sid) + '）';
+}
+
+function resetSid() {
+    const sid = $g('lkSid').value.trim();
+    if (!sid) return;
+    const s = getSeed(sid) + 1;
+    setSeed(sid, s);
+    $g('lkResult').textContent = '已重置！新对应：第 ' + hashNum(sid) + ' 号图纸（次数：' + s + '）';
 }
 
 $g('sd').classList.remove('s');
