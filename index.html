@@ -83,13 +83,16 @@ body{
 <div class="tip">摇号记录请前往 GitHub 查看 cad_images 文件夹</div>
 <div class="adm" onclick="toggleAdmin()">⚙ 管理</div>
 <div class="pnl" id="pnl">
+    <div id="loginBox"><h3>管理员验证</h3>
+    <div class="ar"><input id="pwInput" type="password" placeholder="请输入管理密码"><button class="btn-clr" onclick="checkPw()">登录</button></div></div>
+    <div id="adminBox" style="display:none">
     <h3>已摇号记录</h3>
     <div id="tbl"><span style="color:#8892b0">暂无记录</span></div>
     <div class="ar">
         <input id="clrSid" placeholder="输入要清除的学号">
         <button class="btn-clr" onclick="clearOne()">清除该学号</button>
         <button class="btn-all" onclick="clearAll()">清空全部</button>
-    </div>
+    </div></div>
 </div>
 
 <script>
@@ -198,15 +201,21 @@ refreshAdmin();
 let adminAuthed = false;
 
 function toggleAdmin() {
-    if (!adminAuthed) {
-        const pw = prompt('请输入管理员密码：');
-        if (pw === ADMIN_PW) { adminAuthed = true; }
-        else if (pw !== null) { alert('密码错误'); return; }
-        else { return; }
-    }
     const p = $g('pnl');
     p.classList.toggle('s');
-    if (p.classList.contains('s')) refreshAdmin();
+    if (adminAuthed) { $g('loginBox').style.display = 'none'; $g('adminBox').style.display = 'block'; refreshAdmin(); }
+}
+
+function checkPw() {
+    const pw = $g('pwInput').value;
+    if (pw === ADMIN_PW) {
+        adminAuthed = true;
+        $g('loginBox').style.display = 'none';
+        $g('adminBox').style.display = 'block';
+        refreshAdmin();
+    } else {
+        alert('密码错误');
+    }
 }
 
 function refreshAdmin() {
