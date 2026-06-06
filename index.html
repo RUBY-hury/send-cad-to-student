@@ -86,20 +86,15 @@ body{
     <div id="loginBox"><h3>管理员验证</h3>
     <div class="ar"><input id="pwInput" type="password" placeholder="请输入管理密码"><button class="btn-clr" onclick="checkPw()">登录</button></div></div>
     <div id="adminBox" style="display:none">
-    <h3>已摇号记录</h3>
-    <div id="tbl"><span style="color:#8892b0">暂无记录</span></div>
-    <div class="ar">
-        <input id="clrSid" placeholder="输入要清除的学号">
-        <button class="btn-clr" onclick="clearOne()">清除该学号</button>
-        <button class="btn-all" onclick="clearAll()">清空全部</button>
-    </div></div>
+    <h3>学号查图纸</h3>
+    <div id="tbl"></div>
+    </div>
 </div>
 
 <script>
 const TOTAL = 70;
 const ADMIN_PW = 'admin123';
 let sp = false, dl = false, rn = null;
-let hist = JSON.parse(localStorage.getItem('lt_hist') || '[]');
 
 function $g(id) { return document.getElementById(id); }
 
@@ -115,14 +110,14 @@ function ss(tp, ic, msg) {
     $g('si').textContent = ic; $g('sm').textContent = msg;
 }
 
-function addHist(num, sid, nm, em, ok) {
-    hist.unshift({ num, sid, nm, em, ok, time: Date.now() });
-    if (hist.length > 50) hist.pop();
-    localStorage.setItem('lt_hist', JSON.stringify(hist));
+function hashNum(sid) {
+    let h = 0;
+    for (let i = 0; i < sid.length; i++) {
+        h = ((h << 5) - h) + sid.charCodeAt(i);
+        h |= 0;
+    }
+    return Math.abs(h % TOTAL) + 1;
 }
-
-function findBySid(sid) { return hist.find(h => h.sid === sid); }
-function findByEmail(em) { return hist.some(h => h.em === em); }
 
 function spin() {
     if (sp || dl) return;
@@ -132,16 +127,7 @@ function spin() {
     if (!em) return alert('请输入邮箱');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return alert('邮箱格式不正确');
 
-    const prev = findBySid(sid);
-    if (prev) {
-        const nb = $g('nb'); nb.classList.add('done');
-        $g('nv').textContent = prev.num;
-        ss('in', '⏳', `你之前摇中第${prev.num}号图纸，正在下载...`);
-        dl = true; ub(); download(prev.num); return;
-    }
-    if (findByEmail(em)) return alert('该邮箱已被其他学号使用，不能重复摇号');
-
-    const tn = Math.floor(Math.random() * TOTAL) + 1;
+    const tn = hashNum(sid);
     sp = true; rn = null;
     const nb = $g('nb'); nb.classList.remove('done');
     $g('sd').classList.remove('s');
@@ -157,7 +143,7 @@ function spin() {
         $g('nv').textContent = dn;
         const nb = $g('nb');
         nb.classList.add('flash');
-        setTimeout(() => nb.classList.remove('flash'), delay * 0.7);
+        setTimeout(() => nb.classList.remove('flash'), delay * 0.65);
 
         if (count < total) {
             delay = 30 + (count / total) * 250;
@@ -175,7 +161,6 @@ function spin() {
 
 async function download(num) {
     dl = true; ub();
-    const sid = $g('sid').value.trim(), nm = $g('nm').value.trim(), em = $g('em').value.trim();
     try {
         const res = await fetch('cad_images/' + num + '.dwg');
         if (!res.ok) throw new Error('文件不存在');
@@ -185,17 +170,11 @@ async function download(num) {
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(href);
         ss('ok', '✓', `第${num}号图纸已下载`);
-        addHist(num, sid, nm, em, true);
     } catch (e) {
         console.error(e);
         ss('er', '✗', '下载失败');
-        addHist(num, sid, nm, em, false);
     } finally { dl = false; ub(); }
 }
-
-// init
-$g('sd').classList.remove('s');
-refreshAdmin();
 
 // --- admin ---
 let adminAuthed = false;
@@ -203,7 +182,7 @@ let adminAuthed = false;
 function toggleAdmin() {
     const p = $g('pnl');
     p.classList.toggle('s');
-    if (adminAuthed) { $g('loginBox').style.display = 'none'; $g('adminBox').style.display = 'block'; refreshAdmin(); }
+    if (p.classList.contains('s') && adminAuthed) { $g('loginBox').style.display = 'none'; $g('adminBox').style.display = 'block'; showLookup(); }
 }
 
 function checkPw() {
@@ -212,40 +191,24 @@ function checkPw() {
         adminAuthed = true;
         $g('loginBox').style.display = 'none';
         $g('adminBox').style.display = 'block';
-        refreshAdmin();
+        showLookup();
     } else {
         alert('密码错误');
     }
 }
 
-function refreshAdmin() {
+function showLookup() {
     const tbl = $g('tbl');
-    if (!hist.length) { tbl.innerHTML = '<span style="color:#8892b0">暂无记录</span>'; return; }
-    let h = '<table><tr><th>学号</th><th>姓名</th><th>邮箱</th><th>图纸</th><th>状态</th></tr>';
-    hist.forEach(r => {
-        h += `<tr><td>${r.sid}</td><td>${r.nm}</td><td style="font-size:11px">${r.em}</td><td>${r.num}</td><td style="color:${r.ok?'#4caf50':'#f44336'}">${r.ok?'✓':'✗'}</td></tr>`;
-    });
-    h += '</table>';
-    tbl.innerHTML = h;
+    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询对应图纸"><button class="btn-clr" onclick="lookup()">查询</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div>';
 }
 
-function clearOne() {
-    const sid = $g('clrSid').value.trim();
-    if (!sid) return alert('请输入学号');
-    const before = hist.length;
-    hist = hist.filter(h => h.sid !== sid);
-    if (hist.length === before) return alert('未找到该学号的记录');
-    localStorage.setItem('lt_hist', JSON.stringify(hist));
-    refreshAdmin();
-    $g('clrSid').value = '';
+function lookup() {
+    const sid = $g('lkSid').value.trim();
+    if (!sid) return;
+    $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸';
 }
 
-function clearAll() {
-    if (!confirm('确定要清空全部摇号记录吗？')) return;
-    hist = [];
-    localStorage.removeItem('lt_hist');
-    refreshAdmin();
-}
+$g('sd').classList.remove('s');
 </script>
 </body>
 </html>
