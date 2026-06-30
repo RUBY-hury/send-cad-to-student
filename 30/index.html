@@ -212,10 +212,23 @@ function checkPw() {
 
 function showLookup() {
     const tbl = $g('tbl');
-    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询或重置"><button class="btn-clr" onclick="lookup()">查询</button><button class="btn-all" onclick="resetSid()">重置该学号</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div>';
+    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询或重置"><button class="btn-clr" onclick="lookup()">查询</button><button class="btn-all" onclick="resetSid()">重置</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div><button style="margin-top:12px;background:rgba(76,175,80,.3);border:none;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer" onclick="exportAll()">📥 导出全部记录</button>';
 }
 
 function lookup() {
+    const sid = $g('lkSid').value.trim();
+    if (!sid) return;
+    $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸（次数：' + getSeed(sid) + '）';
+}
+
+function exportAll() {
+    const seeds = JSON.parse(localStorage.getItem('lt_seeds') || '{}');
+    const rows = Object.entries(seeds).map(([sid, seed]) => `${sid},${hashNum(sid)},${seed}`);
+    const csv = '学号,图纸编号,重置次数\n' + rows.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '摇号记录.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
     const sid = $g('lkSid').value.trim();
     if (!sid) return;
     $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸（次数：' + getSeed(sid) + '）';
