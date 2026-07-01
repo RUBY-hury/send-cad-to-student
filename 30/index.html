@@ -212,7 +212,7 @@ function checkPw() {
 
 function showLookup() {
     const tbl = $g('tbl');
-    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询或重置"><button class="btn-clr" onclick="lookup()">查询</button><button class="btn-all" onclick="resetSid()">重置</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div><button style="margin-top:12px;background:rgba(76,175,80,.3);border:none;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer" onclick="exportAll()">📥 导出全部记录</button>';
+    tbl.innerHTML = '<div class="ar"><input id="lkSid" placeholder="输入学号查询或重置"><button class="btn-clr" onclick="lookup()">查询</button><button class="btn-all" onclick="resetSid()">重置</button></div><div id="lkResult" style="margin-top:10px;color:#f0c040;font-size:16px"></div><div style="margin-top:12px;display:flex;gap:8px"><button style="background:rgba(76,175,80,.3);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px" onclick="exportAll()">📤 导出</button><button style="background:rgba(33,150,243,.3);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px" onclick="document.getElementById('impFile').click()">📥 导入</button><input type="file" id="impFile" accept=".json" style="display:none" onchange="importSeeds(this.files[0])"></div>';
 }
 
 function lookup() {
@@ -229,9 +229,17 @@ function exportAll() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '摇号记录.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-    const sid = $g('lkSid').value.trim();
-    if (!sid) return;
-    $g('lkResult').textContent = '该学号对应：第 ' + hashNum(sid) + ' 号图纸（次数：' + getSeed(sid) + '）';
+
+function importSeeds(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            localStorage.setItem('lt_seeds', JSON.stringify(data));
+            alert('导入成功');
+        } catch (ex) { alert('文件格式错误'); }
+    };
+    reader.readAsText(file);
 }
 
 function resetSid() {
